@@ -35,7 +35,7 @@
 #if HAVE_INTEL_DISPATCHER
 #include "extras/intel_dispatcher.h"
 #endif
-
+#define ACTION 0
 //#define DEBUG_MB_TYPE
 
 #define bs_write_ue bs_write_ue_big
@@ -1851,7 +1851,8 @@ x264_t *x264_encoder_open( x264_param_t *param, void *api )
     static const char * const subsampling[4] = { "4:0:0", "4:2:0", "4:2:2", "4:4:4" };
     x264_log( h, X264_LOG_INFO, "profile %s, level %s, %s, %d-bit\n",
               profile, level, subsampling[CHROMA_FORMAT], BIT_DEPTH );
-
+    // Initialize ACE
+    h->ace.frame_count = -1;
     return h;
 fail:
     x264_free( h );
@@ -3325,6 +3326,33 @@ int     x264_encoder_encode( x264_t *h,
                              x264_picture_t *pic_in,
                              x264_picture_t *pic_out )
 {
+    // h->ace.frame_count++;
+    // if (h->ace.frame_count == 50)
+    // {
+    //     // copy the current param to a new param
+    //     x264_param_t new_param;
+    //     memcpy(&new_param, &h->param, sizeof(x264_param_t));
+
+    //     new_param.rc.i_bitrate = 1500;
+    //     new_param.rc.i_vbv_max_bitrate = 1500;
+    //     new_param.rc.i_vbv_buffer_size = 1500 / 30;
+    //     x264_encoder_reconfig(h, &new_param);
+    //     // validate_parameters(h,1);
+    //     printf("Changing bitrate to 6000\n");
+    // }
+    // if (h->ace.frame_count == 70)
+    // {
+    //     // copy the current param to a new param
+    //     x264_param_t new_param;
+    //     memcpy(&new_param, &h->param, sizeof(x264_param_t));
+
+    //     new_param.rc.i_bitrate = 3000;
+    //     new_param.rc.i_vbv_max_bitrate = 3000;
+    //     new_param.rc.i_vbv_buffer_size = 3000 / 30;
+    //     x264_encoder_reconfig(h, &new_param);
+    //     // validate_parameters(h,1);
+    //     printf("Changing bitrate to 6000\n");
+    // }
     x264_t *thread_current, *thread_prev, *thread_oldest;
     int i_nal_type, i_nal_ref_idc, i_global_qp;
     int overhead = NALU_OVERHEAD;
@@ -3855,8 +3883,43 @@ int     x264_encoder_encode( x264_t *h,
     /* Init the rate control */
     /* FIXME: Include slice header bit cost. */
     x264_ratecontrol_start( h, h->fenc->i_qpplus1, overhead*8 );
-    i_global_qp = x264_ratecontrol_qp( h );
 
+    // print h->ece.action
+    // printf("h->ace.action = %d\n", h->ace.action);
+#if ACTION
+    // TODO change complexity
+
+    if (h->ace.action == 1) // ACTION START
+    {
+            // printf("Changing High complexity\n");
+            h->param.analyse.i_trellis = 2;
+            h->param.analyse.inter = X264_ANALYSE_I4x4 | X264_ANALYSE_I8x8
+                        | X264_ANALYSE_PSUB16x16 | X264_ANALYSE_BSUB16x16;
+            h->param.analyse.i_me_method = X264_ME_HEX;    
+            h->param.analyse.i_subpel_refine = 4;            
+            h->param.i_frame_reference = 2;   
+            validate_parameters(h,1);
+            h->ace.action = 2; 
+
+            // h->param.analyse.i_subpel_refine = 4;           
+            // h->param.analyse.i_me_method = X264_ME_HEX;  
+            // h->param.i_frame_reference = 2;
+    }
+    else if (h->ace.action == 2) { // ACTION STOP
+            // printf("Changing Low complexity\n");
+            h->param.analyse.inter = X264_ANALYSE_I4x4 | X264_ANALYSE_I8x8;
+            h->param.analyse.i_trellis = 0;
+            h->param.analyse.i_me_method = X264_ME_DIA;    
+            h->param.analyse.i_subpel_refine = 1;   
+            h->param.i_frame_reference = 1;   
+            validate_parameters(h,1);
+            h->ace.action = 0;
+    }
+#endif
+
+
+    i_global_qp = x264_ratecontrol_qp( h );
+    // printf("i_global_qp = %d\n", i_global_qp);
     pic_out->i_qpplus1 =
     h->fdec->i_qpplus1 = i_global_qp + 1;
 

@@ -2641,7 +2641,9 @@ static float rate_estimate_qscale( x264_t *h )
             rcc->frame_size_planned = qscale2bits( &rce, q );
         else
             rcc->frame_size_planned = predict_size( &rcc->pred[h->sh.i_type], q, rcc->last_satd );
-
+       
+        // int frame_size_estimated_bytes = predict_size( &rcc->pred[h->sh.i_type], h->ace.q_for_size, rcc->last_satd ) ;
+        // frame_size_estimated_bytes = (frame_size_estimated_bytes < 0) ? 0 : frame_size_estimated_bytes / 8;
         /* Apply MinCR and buffer fill restrictions */
         if( rcc->b_vbv )
         {
@@ -2658,6 +2660,34 @@ static float rate_estimate_qscale( x264_t *h )
         }
 
         rcc->frame_size_estimated = rcc->frame_size_planned;
+        // int frame_size_estimated_bytes = rcc->frame_size_estimated / 8;
+        // if (h->ace.pred_size_avg == 0) {
+        //     h->ace.pred_size_avg = frame_size_estimated_bytes;
+        // } else {
+        //     h->ace.pred_size_avg = (h->ace.pred_size_avg + frame_size_estimated_bytes) / 2;
+        // }
+        // if frame_size_estimated_bytes 
+        // printf("rcc->buffer_rate: %f\n", rcc->buffer_rate);
+        int frame_size_average = rcc->buffer_rate / 8;
+        int frame_size_estimated_bytes = rcc->frame_size_planned / 8;
+        printf("frame_size_estimated: %d\n", frame_size_estimated_bytes);
+        if (frame_size_estimated_bytes > frame_size_average) 
+        {
+            h->ace.action = 1;
+            // rcc->frame_size_planned = 25000 * 8;
+            // rcc->frame_size_estimated = 25000 * 8;
+            // printf("1frame_size_estimated: %d\n", frame_size_estimated_bytes);
+            // q /= 2;
+            // rcc->frame_size_planned *= 2;
+            // rcc->frame_size_estimated *= 2;
+        }
+        // else{
+        //     // h->ace.action = 0;
+        //     printf("0frame_size_estimated: %d\n", frame_size_estimated_bytes);
+        // } 
+
+        
+
         return q;
     }
 }

@@ -298,6 +298,14 @@ struct x264_t
         bs_t        bs;
     } out;
 
+    struct {
+        int pred_size_avg;
+        int action;
+        int frame_count;
+        int q_for_size;
+    } ace;
+
+    
     uint8_t *nal_buffer;
     int      nal_buffer_size;
 
