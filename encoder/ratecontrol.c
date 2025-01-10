@@ -2671,7 +2671,8 @@ static float rate_estimate_qscale( x264_t *h )
         int frame_size_average = rcc->buffer_rate / 8;
         int frame_size_estimated_bytes = rcc->frame_size_planned / 8;
         printf("frame_size_estimated: %d\n", frame_size_estimated_bytes);
-        if (frame_size_estimated_bytes > frame_size_average) 
+        int factor = 2;
+        if (frame_size_estimated_bytes > factor * frame_size_average) 
         {
             h->ace.action = 1;
             // rcc->frame_size_planned = 25000 * 8;
