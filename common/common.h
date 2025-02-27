@@ -308,11 +308,12 @@ struct x264_t
     struct {
         int last_encoding_time; // store the encoding time
         int t_last_drop; // frame count since last drop of complexity
+        int c_last_drop; // complexity at last drop
         int complexity; // encoding complexity
-        int drop_factor; // multiplicative decrease factor
-        int sacle_constant; // scaling constant
         int frametime; // 1/fps
         int ace_action; 
+        #define drop_factor 0.7; // multiplicative decrease factor
+        #define sacle_constant 0.4; // scaling constant
         #define max_complexity 10000;
     } dace;
     

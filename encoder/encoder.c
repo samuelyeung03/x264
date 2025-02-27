@@ -3890,6 +3890,17 @@ int     x264_encoder_encode( x264_t *h,
     /* FIXME: Include slice header bit cost. */
     x264_ratecontrol_start( h, h->fenc->i_qpplus1, overhead*8 );
 
+#if DACE_ACTION
+    if (h->dace.last_encoding_time > h->dace.frametime)
+    {
+        h->dace.t_last_drop = 0;
+    }
+    if (!h->dace.t_last_drop || h->dace.complexity < max_complexity)
+    {
+        h->dace.complexity = sacle_constant*pow(h->dace.t_last_drop - pow(h->dace.c_last_drop*(1 - drop_factor)/sacle_constant ,1/3),3) + h->dace.c_last_drop;
+        h->dace.t_last_drop ++;
+    }
+#endif
     // print h->ece.action
     // printf("h->ace.action = %d\n", h->ace.action);
 #if ACE_ACTION 
