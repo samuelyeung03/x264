@@ -3357,7 +3357,7 @@ int     x264_encoder_encode( x264_t *h,
     //     printf("Changing bitrate to 6000\n");
     // }
 #if DACE_ACTION
-    t_start = auto t_start = std::chrono::high_resolution_clock::now();
+    int64_t t_start = x264_mdate();
 #endif
     x264_t *thread_current, *thread_prev, *thread_oldest;
     int i_nal_type, i_nal_ref_idc, i_global_qp;
@@ -3973,24 +3973,23 @@ int     x264_encoder_encode( x264_t *h,
     }
     else if( h->param.b_sliced_threads )
     {
-        if( threaded_slices_write( h ) )
+        if( threaded_slices_write( h ) ){
             #if DACE_ACTION
-            auto t_end = std::chrono::high_resolution_clock::now();
-            h->dace.last_encoding_time = td::chrono::duration<double, std::micro>(t_end - t_start).count();
+            h->dace.last_encoding_time = x264_mdate() - t_start;
             #endif
             return -1;
+        }
     }
     else
-        if( (intptr_t)slices_write( h ) )
-            #if DACE_ACTION
-            auto t_end = std::chrono::high_resolution_clock::now();
-            h->dace.last_encoding_time = td::chrono::duration<double, std::micro>(t_end - t_start).count();
+        if( (intptr_t)slices_write( h ) ){
+            #if DACE_ACTION 
+            h->dace.last_encoding_time = x264_mdate() - t_start;
             #endif
             return -1;
+        }
     int end = encoder_frame_end( thread_oldest, thread_current, pp_nal, pi_nal, pic_out );
 #if DACE_ACTION
-    auto t_end = std::chrono::high_resolution_clock::now();
-    h->dace.last_encoding_time = td::chrono::duration<double, std::micro>(t_end - t_start).count();
+    h->dace.last_encoding_time = x264_mdate() - t_start;
 #endif
     return end;
 }
