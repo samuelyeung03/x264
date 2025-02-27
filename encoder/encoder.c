@@ -35,7 +35,8 @@
 #if HAVE_INTEL_DISPATCHER
 #include "extras/intel_dispatcher.h"
 #endif
-#define ACTION 0
+#define ACE_ACTION 0
+#define DACE_ACTION 1
 //#define DEBUG_MB_TYPE
 
 #define bs_write_ue bs_write_ue_big
@@ -1853,6 +1854,8 @@ x264_t *x264_encoder_open( x264_param_t *param, void *api )
               profile, level, subsampling[CHROMA_FORMAT], BIT_DEPTH );
     // Initialize ACE
     h->ace.frame_count = -1;
+    // Initialize DACE
+    h->dace.complexity = -1;
     return h;
 fail:
     x264_free( h );
@@ -3353,6 +3356,9 @@ int     x264_encoder_encode( x264_t *h,
     //     // validate_parameters(h,1);
     //     printf("Changing bitrate to 6000\n");
     // }
+#if DACE_ACTION
+    t_start = auto t_start = std::chrono::high_resolution_clock::now();
+#endif
     x264_t *thread_current, *thread_prev, *thread_oldest;
     int i_nal_type, i_nal_ref_idc, i_global_qp;
     int overhead = NALU_OVERHEAD;
@@ -3886,9 +3892,11 @@ int     x264_encoder_encode( x264_t *h,
 
     // print h->ece.action
     // printf("h->ace.action = %d\n", h->ace.action);
-#if ACTION
+#if ACE_ACTION 
     // TODO change complexity
-
+    #if DACE_ACTION
+    h->dace.ace_action = h->ace_action;
+    #else
     if (h->ace.action == 1) // ACTION START
     {
             // printf("Changing High complexity\n");
@@ -3915,8 +3923,8 @@ int     x264_encoder_encode( x264_t *h,
             validate_parameters(h,1);
             h->ace.action = 0;
     }
+    #endif
 #endif
-
 
     i_global_qp = x264_ratecontrol_qp( h );
     // printf("i_global_qp = %d\n", i_global_qp);
@@ -3955,13 +3963,25 @@ int     x264_encoder_encode( x264_t *h,
     else if( h->param.b_sliced_threads )
     {
         if( threaded_slices_write( h ) )
+            #if DACE_ACTION
+            auto t_end = std::chrono::high_resolution_clock::now();
+            h->dace.last_encoding_time = td::chrono::duration<double, std::micro>(t_end - t_start).count();
+            #endif
             return -1;
     }
     else
         if( (intptr_t)slices_write( h ) )
+            #if DACE_ACTION
+            auto t_end = std::chrono::high_resolution_clock::now();
+            h->dace.last_encoding_time = td::chrono::duration<double, std::micro>(t_end - t_start).count();
+            #endif
             return -1;
-
-    return encoder_frame_end( thread_oldest, thread_current, pp_nal, pi_nal, pic_out );
+    int end = encoder_frame_end( thread_oldest, thread_current, pp_nal, pi_nal, pic_out );
+#if DACE_ACTION
+    auto t_end = std::chrono::high_resolution_clock::now();
+    h->dace.last_encoding_time = td::chrono::duration<double, std::micro>(t_end - t_start).count();
+#endif
+    return end;
 }
 
 static int encoder_frame_end( x264_t *h, x264_t *thread_current,

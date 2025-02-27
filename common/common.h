@@ -305,6 +305,18 @@ struct x264_t
         int q_for_size;
     } ace;
 
+    struct {
+        int last_encoding_time; // store the encoding time
+        int t_last_drop; // frame count since last drop of complexity
+        int complexity; // encoding complexity
+        int drop_factor; // multiplicative decrease factor
+        int sacle_constant; // scaling constant
+        int frametime; // 1/fps
+        int ace_action; 
+        #define max_complexity 10000;
+    } dace;
+    
+
     
     uint8_t *nal_buffer;
     int      nal_buffer_size;
