@@ -3976,20 +3976,18 @@ int     x264_encoder_encode( x264_t *h,
     }
     else if( h->param.b_sliced_threads )
     {
-        if( threaded_slices_write( h ) ){
-            #if DACE_ACTION
+        if( threaded_slices_write( h ) )
+#if DACE_ACTION
             h->dace.last_encoding_time = x264_mdate() - t_start;
-            #endif
+#endif
             return -1;
-        }
     }
     else
-        if( (intptr_t)slices_write( h ) ){
-            #if DACE_ACTION 
+        if( (intptr_t)slices_write( h ) )
+#if DACE_ACTION 
             h->dace.last_encoding_time = x264_mdate() - t_start;
-            #endif
+#endif
             return -1;
-        }
     int end = encoder_frame_end( thread_oldest, thread_current, pp_nal, pi_nal, pic_out );
 #if DACE_ACTION
     h->dace.last_encoding_time = x264_mdate() - t_start;
