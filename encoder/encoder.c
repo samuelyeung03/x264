@@ -3898,10 +3898,11 @@ int     x264_encoder_encode( x264_t *h,
     {
         h->dace.t_last_drop = 0;
     }
-    if (!h->dace.t_last_drop || h->dace.complexity < max_complexity)
+    if (!h->dace.t_last_drop || h->dace.complexity < dace_max_complexity)
     {
-        h->dace.complexity = sacle_constant*pow(h->dace.t_last_drop - pow(h->dace.c_last_drop*(1 - drop_factor)/sacle_constant ,1/3),3) + h->dace.c_last_drop;
+        h->dace.complexity = dace_sacle_constant*pow(h->dace.t_last_drop - pow(h->dace.c_last_drop*(1 - dace_drop_factor)/dace_sacle_constant ,1/3),3) + h->dace.c_last_drop;
         h->dace.t_last_drop ++;
+        printf("h->dace.complexity = %f\n", h->dace.complexity ,"h->dace.t_last_drop = %d\n", h->dace.t_last_drop);
     }
 #endif
     // print h->ece.action

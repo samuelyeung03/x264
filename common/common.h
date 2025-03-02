@@ -312,9 +312,9 @@ struct x264_t
         int complexity; // encoding complexity
         int frametime; // 1/fps
         int ace_action; 
-        #define drop_factor 0.7 // multiplicative decrease factor
-        #define sacle_constant 0.4 // scaling constant
-        #define max_complexity 10000
+        #define dace_drop_factor 0.7 // multiplicative decrease factor
+        #define dace_sacle_constant 0.4 // scaling constant
+        #define dace_max_complexity 10000
     } dace;
     
 
