@@ -1855,7 +1855,10 @@ x264_t *x264_encoder_open( x264_param_t *param, void *api )
     // Initialize ACE
     h->ace.frame_count = -1;
     // Initialize DACE
-    h->dace.complexity = -1;
+#if DACE_ACTION
+        h->dace.frametime = 1000000 / h->param.i_fps_num;
+        h->dace.c_last_drop = 10;
+#endif
     return h;
 fail:
     x264_free( h );
@@ -1969,7 +1972,7 @@ int x264_encoder_reconfig( x264_t *h, x264_param_t *param )
     else
         h->reconfig_h->param = param_save;
 #if DACE_ACTION
-        h->dace.frametime = 1000 / h->param.i_fps_num;
+        h->dace.frametime = 1000000 / h->param.i_fps_num;
 #endif
 
     return ret;
@@ -3889,22 +3892,133 @@ int     x264_encoder_encode( x264_t *h,
         overhead += h->out.nal[h->out.i_nal-1].i_payload + h->out.nal[h->out.i_nal-1].i_padding + SEI_OVERHEAD;
     }
 
-    /* Init the rate control */
-    /* FIXME: Include slice header bit cost. */
-    x264_ratecontrol_start( h, h->fenc->i_qpplus1, overhead*8 );
-
 #if DACE_ACTION
     if (h->dace.last_encoding_time > h->dace.frametime)
     {
         h->dace.t_last_drop = 0;
+        h->dace.c_last_drop = h->dace.complexity;
     }
-    if (!h->dace.t_last_drop || h->dace.complexity < dace_max_complexity)
+    if (h->dace.complexity < dace_max_complexity || h->dace.t_last_drop == 0)
     {
         h->dace.complexity = dace_sacle_constant*pow(h->dace.t_last_drop - pow(h->dace.c_last_drop*(1 - dace_drop_factor)/dace_sacle_constant ,1/3),3) + h->dace.c_last_drop;
-        h->dace.t_last_drop ++;
-        printf("h->dace.complexity = %f\n", h->dace.complexity ,"h->dace.t_last_drop = %d\n", h->dace.t_last_drop);
+        h->dace.complexity = fmin(h->dace.complexity , dace_max_complexity);
     }
+    h->dace.t_last_drop ++;
+    if (h->dace.complexity_level != (int)(h->dace.complexity /1000))
+    {
+        h->dace.complexity_level =(int) (h->dace.complexity / 1000);
+        printf("Complexity level changed to %d\n", h->dace.complexity_level);
+        switch (h->dace.complexity_level)
+        {
+            case 0:
+                printf("Complexity level 0\n");
+                h->param.analyse.i_trellis = 0;
+                h->param.analyse.inter = X264_ANALYSE_I4x4 | X264_ANALYSE_I8x8;
+                h->param.analyse.i_me_method = X264_ME_DIA;    
+                h->param.analyse.i_subpel_refine = 1;            
+                h->param.i_frame_reference = 1;   
+                validate_parameters(h,1);
+                break;
+            case 1:
+                printf("Complexity level 1\n");
+                h->param.analyse.i_trellis = 1;
+                h->param.analyse.inter = X264_ANALYSE_I4x4 | X264_ANALYSE_I8x8 | X264_ANALYSE_PSUB16x16;
+                h->param.analyse.i_me_method = X264_ME_HEX;    
+                h->param.analyse.i_subpel_refine = 2;            
+                h->param.i_frame_reference = 1;   
+                validate_parameters(h,1);
+                break;
+            case 2:
+                printf("Complexity level 2\n");
+                h->param.analyse.i_trellis = 2;
+                h->param.analyse.inter = X264_ANALYSE_I4x4 | X264_ANALYSE_I8x8 | X264_ANALYSE_PSUB16x16 | X264_ANALYSE_BSUB16x16;
+                h->param.analyse.i_me_method = X264_ME_HEX;    
+                h->param.analyse.i_subpel_refine = 4;            
+                h->param.i_frame_reference = 2;   
+                validate_parameters(h,1);
+                break;
+            case 3:
+                printf("Complexity level 3\n");
+                h->param.analyse.i_trellis = 2;
+                h->param.analyse.inter = X264_ANALYSE_I4x4 | X264_ANALYSE_I8x8 | X264_ANALYSE_PSUB16x16 | X264_ANALYSE_BSUB16x16;
+                h->param.analyse.i_me_method = X264_ME_HEX;    
+                h->param.analyse.i_subpel_refine = 4;            
+                h->param.i_frame_reference = 2;   
+                validate_parameters(h,1);
+                break;
+            case 4:
+                printf("Complexity level 4\n");
+                h->param.analyse.i_trellis = 2;
+                h->param.analyse.inter = X264_ANALYSE_I4x4 | X264_ANALYSE_I8x8 | X264_ANALYSE_PSUB16x16 | X264_ANALYSE_BSUB16x16;
+                h->param.analyse.i_me_method = X264_ME_HEX;    
+                h->param.analyse.i_subpel_refine = 4;            
+                h->param.i_frame_reference = 2;   
+                validate_parameters(h,1);
+                break;
+            case 5:
+                printf("Complexity level 5\n");
+                h->param.analyse.i_trellis = 2;
+                h->param.analyse.inter = X264_ANALYSE_I4x4 | X264_ANALYSE_I8x8 | X264_ANALYSE_PSUB16x16 | X264_ANALYSE_BSUB16x16;
+                h->param.analyse.i_me_method = X264_ME_HEX;    
+                h->param.analyse.i_subpel_refine = 4;            
+                h->param.i_frame_reference = 2;   
+                validate_parameters(h,1);
+                break;
+            case 6:
+                printf("Complexity level 6\n");
+                h->param.analyse.i_trellis = 2;
+                h->param.analyse.inter = X264_ANALYSE_I4x4 | X264_ANALYSE_I8x8 | X264_ANALYSE_PSUB16x16 | X264_ANALYSE_BSUB16x16;
+                h->param.analyse.i_me_method = X264_ME_HEX;    
+                h->param.analyse.i_subpel_refine = 4;            
+                h->param.i_frame_reference = 2;   
+                validate_parameters(h,1);
+                break;
+            case 7:
+                printf("Complexity level 7\n");
+                h->param.analyse.i_trellis = 2;
+                h->param.analyse.inter = X264_ANALYSE_I4x4 | X264_ANALYSE_I8x8 | X264_ANALYSE_PSUB16x16 | X264_ANALYSE_BSUB16x16;
+                h->param.analyse.i_me_method = X264_ME_HEX;    
+                h->param.analyse.i_subpel_refine = 4;            
+                h->param.i_frame_reference = 2;   
+                validate_parameters(h,1);
+                break;
+            case 8:
+                printf("Complexity level 8\n");
+                h->param.analyse.i_trellis = 2;
+                h->param.analyse.inter = X264_ANALYSE_I4x4 | X264_ANALYSE_I8x8 | X264_ANALYSE_PSUB16x16 | X264_ANALYSE_BSUB16x16;
+                h->param.analyse.i_me_method = X264_ME_HEX;    
+                h->param.analyse.i_subpel_refine = 4;            
+                h->param.i_frame_reference = 2;   
+                validate_parameters(h,1);
+                break;
+            case 9:
+                printf("Complexity level 9\n");
+                h->param.analyse.i_trellis = 2;
+                h->param.analyse.inter = X264_ANALYSE_I4x4 | X264_ANALYSE_I8x8 | X264_ANALYSE_PSUB16x16 | X264_ANALYSE_BSUB16x16 | X264_ANALYSE_PSUB8x8 | X264_ANALYSE_PSUB8x8;
+                h->param.analyse.i_me_method = X264_ME_UMH;    
+                h->param.analyse.i_subpel_refine = 7;            
+                h->param.i_frame_reference = 4;   
+                h->param.analyse.b_mixed_references = 1;
+                h->param.analyse.b_chroma_me = 1;
+                h->param.analyse.i_direct_mv_pred = X264_DIRECT_PRED_AUTO;
+                h->param.analyse.i_me_range = 32;
+                validate_parameters(h,1);
+                break;
+            default:
+                break;
+        }
+    }
+    printf("h->dace.complexity = %d\n", h->dace.complexity);
+    printf("h->dace.last_encoding_time = %d\n", h->dace.last_encoding_time);
+    printf("h->dace.t_last_drop = %d\n", h->dace.t_last_drop);
+    printf("h->dace.c_last_drop = %d\n", h->dace.c_last_drop);
+    printf("h->dace.frametime = %d\n", h->dace.frametime);
 #endif
+
+    /* Init the rate control */
+    /* FIXME: Include slice header bit cost. */
+    x264_ratecontrol_start( h, h->fenc->i_qpplus1, overhead*8 );
+
     // print h->ece.action
     // printf("h->ace.action = %d\n", h->ace.action);
 #if ACE_ACTION 
@@ -3977,18 +4091,20 @@ int     x264_encoder_encode( x264_t *h,
     }
     else if( h->param.b_sliced_threads )
     {
-        if( threaded_slices_write( h ) )
+        if( threaded_slices_write( h ) ){
 #if DACE_ACTION
             h->dace.last_encoding_time = x264_mdate() - t_start;
 #endif
             return -1;
+        }
     }
     else
-        if( (intptr_t)slices_write( h ) )
+        if( (intptr_t)slices_write( h ) ){
 #if DACE_ACTION 
             h->dace.last_encoding_time = x264_mdate() - t_start;
 #endif
             return -1;
+        }
     int end = encoder_frame_end( thread_oldest, thread_current, pp_nal, pi_nal, pic_out );
 #if DACE_ACTION
     h->dace.last_encoding_time = x264_mdate() - t_start;
