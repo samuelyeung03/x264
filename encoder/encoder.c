@@ -3891,10 +3891,14 @@ int     x264_encoder_encode( x264_t *h,
     }
 
 #if DACE_ACTION
-    if (h->dace.last_encoding_time > h->dace.frametime)
+    if (h->dace.last_encoding_time > h->dace.frametime * dace_offset)
     {
         h->dace.t_last_drop = 0;
         h->dace.c_last_drop = h->dace.complexity;
+        if (h->dace.last_encoding_time > h->dace.frametime)
+        {
+            h->dace.c_last_drop *= dace_drop_factor;
+        }
     }
     if (h->dace.complexity < dace_max_complexity || h->dace.t_last_drop == 0)
     {
