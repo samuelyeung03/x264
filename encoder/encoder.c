@@ -1932,7 +1932,6 @@ static int encoder_try_reconfig( x264_t *h, x264_param_t *param, int *rc_reconfi
     COPY( rc.f_rf_constant );
     COPY( rc.f_rf_constant_max );
 #undef COPY
-
     return validate_parameters( h, 0 );
 }
 
@@ -1961,6 +1960,9 @@ int x264_encoder_reconfig_apply( x264_t *h, x264_param_t *param )
  ****************************************************************************/
 int x264_encoder_reconfig( x264_t *h, x264_param_t *param )
 {
+#if DACE_ACTION
+        h->dace.frametime = 1000000 / param->i_fps_num;
+#endif
     h = h->thread[h->thread[0]->i_thread_phase];
     x264_param_t param_save = h->reconfig_h->param;
     h->reconfig_h->param = h->param;
@@ -1971,10 +1973,6 @@ int x264_encoder_reconfig( x264_t *h, x264_param_t *param )
         h->reconfig = 1;
     else
         h->reconfig_h->param = param_save;
-#if DACE_ACTION
-        h->dace.frametime = 1000000 / h->param.i_fps_num;
-#endif
-
     return ret;
 }
 
@@ -3992,7 +3990,7 @@ int     x264_encoder_encode( x264_t *h,
                 h->param.analyse.inter = X264_ANALYSE_I4x4 | X264_ANALYSE_I8x8 | X264_ANALYSE_PSUB16x16 | X264_ANALYSE_BSUB16x16;
                 h->param.analyse.i_me_method = X264_ME_HEX;
                 h->param.analyse.i_subpel_refine = 4;
-                h->param.i_frame_reference = 2;
+                h->param.i_frame_reference = 3;
                 h->param.analyse.b_mixed_references = 1;
                 h->param.analyse.b_chroma_me = 1;
                 h->param.analyse.i_direct_mv_pred = X264_DIRECT_PRED_SPATIAL;
@@ -4011,7 +4009,7 @@ int     x264_encoder_encode( x264_t *h,
                 h->param.analyse.inter = X264_ANALYSE_I4x4 | X264_ANALYSE_I8x8 | X264_ANALYSE_PSUB16x16 | X264_ANALYSE_BSUB16x16;
                 h->param.analyse.i_me_method = X264_ME_HEX;
                 h->param.analyse.i_subpel_refine = 4;
-                h->param.i_frame_reference = 2;
+                h->param.i_frame_reference = 3;
                 h->param.analyse.b_mixed_references = 1;
                 h->param.analyse.b_chroma_me = 1;
                 h->param.analyse.i_direct_mv_pred = X264_DIRECT_PRED_SPATIAL;
@@ -4030,7 +4028,7 @@ int     x264_encoder_encode( x264_t *h,
                 h->param.analyse.inter = X264_ANALYSE_I4x4 | X264_ANALYSE_I8x8 | X264_ANALYSE_PSUB16x16 | X264_ANALYSE_BSUB16x16;
                 h->param.analyse.i_me_method = X264_ME_HEX;
                 h->param.analyse.i_subpel_refine = 4;
-                h->param.i_frame_reference = 2;
+                h->param.i_frame_reference = 3;
                 h->param.analyse.b_mixed_references = 1;
                 h->param.analyse.b_chroma_me = 1;
                 h->param.analyse.i_direct_mv_pred = X264_DIRECT_PRED_SPATIAL;
@@ -4049,7 +4047,7 @@ int     x264_encoder_encode( x264_t *h,
                 h->param.analyse.inter = X264_ANALYSE_I4x4 | X264_ANALYSE_I8x8 | X264_ANALYSE_PSUB16x16 | X264_ANALYSE_BSUB16x16;
                 h->param.analyse.i_me_method = X264_ME_HEX;
                 h->param.analyse.i_subpel_refine = 4;
-                h->param.i_frame_reference = 2;
+                h->param.i_frame_reference = 4;
                 h->param.analyse.b_mixed_references = 1;
                 h->param.analyse.b_chroma_me = 1;
                 h->param.analyse.i_direct_mv_pred = X264_DIRECT_PRED_SPATIAL;
@@ -4068,7 +4066,7 @@ int     x264_encoder_encode( x264_t *h,
                 h->param.analyse.inter = X264_ANALYSE_I4x4 | X264_ANALYSE_I8x8 | X264_ANALYSE_PSUB16x16 | X264_ANALYSE_BSUB16x16;
                 h->param.analyse.i_me_method = X264_ME_HEX;
                 h->param.analyse.i_subpel_refine = 4;
-                h->param.i_frame_reference = 2;
+                h->param.i_frame_reference = 4;
                 h->param.analyse.b_mixed_references = 1;
                 h->param.analyse.b_chroma_me = 1;
                 h->param.analyse.i_direct_mv_pred = X264_DIRECT_PRED_SPATIAL;
