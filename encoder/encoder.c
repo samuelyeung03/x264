@@ -1857,7 +1857,9 @@ x264_t *x264_encoder_open( x264_param_t *param, void *api )
     // Initialize DACE
 #if DACE_ACTION
         h->dace.frametime = 1000000 / h->param.i_fps_num;
-        h->dace.c_last_drop = 10;
+        h->dace.c_last_drop = 1000;
+        h->dace.t_last_drop = 10000;
+        h->dace.last_encoding_time = h->dace.frametime/2;
 #endif
     return h;
 fail:
@@ -3894,12 +3896,12 @@ int     x264_encoder_encode( x264_t *h,
     if (h->dace.last_encoding_time > h->dace.frametime * dace_offset)
     {
         h->dace.t_last_drop = 0;
-        h->dace.c_last_drop = h->dace.complexity;
-        h->dace.complexity = fmax((h->dace.complexity - (h->dace.frametime * dace_offset - h->dace.last_encoding_time)/h->dace.frametime * h->dace.c_last_drop) * dace_drop_factor, 0);
+        h->dace.c_last_drop = fmax(h->dace.complexity,10);
+        h->dace.complexity = h->dace.complexity * dace_drop_factor;
     }
     else if (h->dace.complexity < dace_max_complexity)
     {
-        h->dace.complexity += (h->dace.frametime * dace_offset - h->dace.last_encoding_time)/h->dace.frametime * h->dace.c_last_drop * pow(1 - 1/h->dace.t_last_drop,2) * dace_sacle_constant;
+        h->dace.complexity += (float)(h->dace.frametime * dace_offset)/(h->dace.last_encoding_time) * h->dace.c_last_drop * pow(1.0-1.0/h->dace.t_last_drop,3) * dace_sacle_constant;
         h->dace.complexity = fmin(h->dace.complexity , dace_max_complexity);
     }
     h->dace.t_last_drop ++;

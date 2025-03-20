@@ -314,7 +314,7 @@ struct x264_t
         int ace_action; 
         int complexity_level; //encoding complexity presets
         #define dace_drop_factor 0.7 // multiplicative decrease factor
-        #define dace_sacle_constant 0.4 // scaling constant
+        #define dace_sacle_constant 1// scaling constant
         #define dace_offset 0.9 // offset of frametime to prevent over shooting
         #define dace_max_complexity 10000
     } dace;
