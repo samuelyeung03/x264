@@ -3895,14 +3895,11 @@ int     x264_encoder_encode( x264_t *h,
     {
         h->dace.t_last_drop = 0;
         h->dace.c_last_drop = h->dace.complexity;
-        if (h->dace.last_encoding_time > h->dace.frametime)
-        {
-            h->dace.c_last_drop *= dace_drop_factor;
-        }
+        h->dace.complexity = fmax((h->dace.complexity - (h->dace.frametime * dace_offset - h->dace.last_encoding_time)/h->dace.frametime * h->dace.c_last_drop) * dace_drop_factor, 0);
     }
-    if (h->dace.complexity < dace_max_complexity || h->dace.t_last_drop == 0)
+    else if (h->dace.complexity < dace_max_complexity)
     {
-        h->dace.complexity = dace_sacle_constant*pow(h->dace.t_last_drop - pow(h->dace.c_last_drop*(1 - dace_drop_factor)/dace_sacle_constant ,1.0/3),3) + h->dace.c_last_drop;
+        h->dace.complexity += (h->dace.frametime * dace_offset - h->dace.last_encoding_time)/h->dace.frametime * h->dace.c_last_drop * pow(1 - 1/h->dace.t_last_drop,2) * dace_sacle_constant;
         h->dace.complexity = fmin(h->dace.complexity , dace_max_complexity);
     }
     h->dace.t_last_drop ++;
