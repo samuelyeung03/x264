@@ -3326,6 +3326,7 @@ static int x264_DACE( x264_t *h){
     else if (h->dace.complexity > dace_max_complexity)
     {
         h->dace.t_last_drop ++;
+        h->dace.complexity = dace_max_complexity;
         printf("h->dace.complexity = %d\n", h->dace.complexity);
         printf("h->dace.last_encoding_time = %d\n", h->dace.last_encoding_time);
         printf("h->dace.t_last_drop = %d\n", h->dace.t_last_drop);
@@ -3341,8 +3342,8 @@ static int x264_DACE( x264_t *h){
     else
     {
         h->dace.complexity = dace_sacle_constant*pow(h->dace.t_last_drop - pow(h->dace.c_last_drop*(1 - dace_drop_factor)/dace_sacle_constant ,1.0/3),3) + h->dace.c_last_drop;
-        h->dace.complexity = fmin(h->dace.complexity , dace_max_complexity);
     }
+    h->dace.complexity = fmin(h->dace.complexity , dace_max_complexity);
     h->dace.t_last_drop ++;
     if (h->dace.complexity_level != (int)(h->dace.complexity /1000))
     {
