@@ -3335,9 +3335,9 @@ static int x264_DACE( x264_t *h){
         printf("h->dace.complexity_level = %d\n", h->dace.complexity_level);    
         return 0;
     }
-    if (h->dace.last_encoding_time > h->dace.frametime * dace_offset)
+    if (h->dace.last_encoding_time > h->dace.frametime * dace_saturation_start)
     {
-        h->dace.complexity += pow(1 - h->dace.last_encoding_time / h->dace.frametime,2) * dace_linear_increase;
+        h->dace.complexity += pow(1 - h->dace.last_encoding_time / h->dace.frametime / dace_saturated,2) * dace_linear_increase;
     }
     else
     {
