@@ -3317,8 +3317,19 @@ int x264_encoder_invalidate_reference( x264_t *h, int64_t pts )
     return 0;
 }
 #if DACE_ACTION
-static int x264_DACE( x264_t *h){
-    if (h->dace.last_encoding_time > h->dace.frametime)
+static int x264_DACE_Cal(x264_t *h){
+    if (h->fenc->b_keyframe)
+    {
+        h->dace.complexity = 0;
+        h->dace.t_last_drop = -1;
+        printf("DACE keyframe detected\n");
+        return 2;
+    }
+    if (h->dace.t_last_drop == -1)  
+    {
+        h->dace.t_last_drop = 1;
+    }
+    else if (h->dace.last_encoding_time > h->dace.frametime)
     {
         h->dace.t_last_drop = 0;
         h->dace.c_last_drop = h->dace.complexity;
@@ -3326,25 +3337,30 @@ static int x264_DACE( x264_t *h){
     else if (h->dace.complexity > dace_max_complexity)
     {
         h->dace.t_last_drop ++;
-        h->dace.complexity = dace_max_complexity;
-        printf("h->dace.complexity = %d\n", h->dace.complexity);
-        printf("h->dace.last_encoding_time = %d\n", h->dace.last_encoding_time);
-        printf("h->dace.t_last_drop = %d\n", h->dace.t_last_drop);
-        printf("h->dace.c_last_drop = %d\n", h->dace.c_last_drop);
-        printf("h->dace.frametime = %d\n", h->dace.frametime);
-        printf("h->dace.complexity_level = %d\n", h->dace.complexity_level);    
-        return 0;
+        h->dace.complexity = dace_max_complexity;   
+        return 3;
     }
     if (h->dace.last_encoding_time > h->dace.frametime * dace_saturation_start)
     {
+        printf("DACE saturated\n");
         h->dace.complexity += pow(1 - h->dace.last_encoding_time / h->dace.frametime / dace_saturated,2) * dace_linear_increase;
     }
     else
     {
         h->dace.complexity = dace_sacle_constant*pow(h->dace.t_last_drop - pow(h->dace.c_last_drop*(1 - dace_drop_factor)/dace_sacle_constant ,1.0/3),3) + h->dace.c_last_drop;
-    }
+    }    
     h->dace.complexity = fmin(h->dace.complexity , dace_max_complexity);
     h->dace.t_last_drop ++;
+    return 1;
+}
+static int x264_DACE(x264_t *h){
+    x264_DACE_Cal(h);
+    printf("h->dace.complexity = %d\n", h->dace.complexity);
+    printf("h->dace.last_encoding_time = %d\n", h->dace.last_encoding_time);
+    printf("h->dace.t_last_drop = %d\n", h->dace.t_last_drop - 1);
+    printf("h->dace.c_last_drop = %d\n", h->dace.c_last_drop);
+    printf("h->dace.frametime = %d\n", h->dace.frametime);
+    printf("h->dace.complexity_level = %d\n", h->dace.complexity_level); 
     if (h->dace.complexity_level != (int)(h->dace.complexity /1000))
     {
         h->dace.complexity_level =(int) (h->dace.complexity / 1000);
@@ -4130,6 +4146,7 @@ int     x264_encoder_encode( x264_t *h,
     }
 
 #if DACE_ACTION
+
     x264_DACE(h);
 #endif
 
