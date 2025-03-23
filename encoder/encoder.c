@@ -3322,6 +3322,7 @@ int x264_encoder_invalidate_reference( x264_t *h, int64_t pts )
 static int x264_DACE_Cal(x264_t *h){
     if (h->fenc->b_keyframe)
     {
+        h->dace.c_last_drop = h->dace.complexity;
         h->dace.complexity = 0;
         h->dace.t_last_drop = -1;
         printf("DACE keyframe detected\n");
@@ -3345,14 +3346,14 @@ static int x264_DACE_Cal(x264_t *h){
     if (h->dace.last_encoding_time > h->dace.frametime * dace_saturation_start && h->dace.t_last_drop > 0)
     {
         printf("DACE saturated\n");
-        h->dace.complexity += pow(1 - h->dace.last_encoding_time / h->dace.frametime / dace_saturated,2) * dace_linear_increase;
+        h->dace.complexity += pow(1 - h->dace.last_encoding_time / h->dace.frametime / dace_saturated,3) * dace_max_complexity * dace_saturation_factor *(1 - pow(h->dace.t_last_drop,-3));
     }
     else
     {
-        h->dace.complexity = dace_sacle_constant*pow(h->dace.t_last_drop - pow(h->dace.c_last_drop*(1 - dace_drop_factor)/dace_sacle_constant ,1.0/3),3) + h->dace.c_last_drop;
+        h->dace.complexity = dace_sacle_constant*pow(h->dace.t_last_drop - pow(h->dace.c_last_drop*dace_drop_factor/dace_sacle_constant ,1.0/3),3) + h->dace.c_last_drop;
+        h->dace.t_last_drop ++;
     }    
     h->dace.complexity = fmin(h->dace.complexity , dace_max_complexity);
-    h->dace.t_last_drop ++;
     return 1;
 }
 static int x264_DACE(x264_t *h){
