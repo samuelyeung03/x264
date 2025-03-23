@@ -112,6 +112,9 @@
 
 #define CPPIXEL_X4(dst,src) MPIXEL_X4(dst) = MPIXEL_X4(src)
 
+#define DACE_ACTION 1
+#define DACE_TEST 200
+
 /****************************************************************************
  * Includes
  ****************************************************************************/
@@ -128,6 +131,7 @@
 #include "dct.h"
 #include "quant.h"
 #include "threadpool.h"
+
 
 /****************************************************************************
  * General functions
@@ -304,7 +308,7 @@ struct x264_t
         int frame_count;
         int q_for_size;
     } ace;
-
+#if DACE_ACTION
     struct {
         int last_encoding_time; // store the encoding time
         int t_last_drop; // frame count since last drop of complexity
@@ -319,7 +323,12 @@ struct x264_t
         #define dace_saturated 0.9 // offset of frametime to prevent over shooting
         #define dace_max_complexity 10500
         #define dace_linear_increase 10000
+    #if DACE_TEST
+        int complexities[DACE_TEST]; // store the complexity levels
+        int duration[DACE_TEST]; // store the duration of each frame
+    #endif
     } dace;
+#endif
     
 
     

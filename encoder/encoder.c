@@ -37,6 +37,7 @@
 #endif
 #define ACE_ACTION 0
 #define DACE_ACTION 1
+#define DACE_TEST 200
 //#define DEBUG_MB_TYPE
 
 #define bs_write_ue bs_write_ue_big
@@ -1858,6 +1859,7 @@ x264_t *x264_encoder_open( x264_param_t *param, void *api )
 #if DACE_ACTION
         h->dace.frametime = 1000000 / h->param.i_fps_num;
         h->dace.c_last_drop = 10;
+        h->dace.complexity_level = -1;
 #endif
     return h;
 fail:
@@ -3340,7 +3342,7 @@ static int x264_DACE_Cal(x264_t *h){
         h->dace.complexity = dace_max_complexity;   
         return 3;
     }
-    if (h->dace.last_encoding_time > h->dace.frametime * dace_saturation_start)
+    if (h->dace.last_encoding_time > h->dace.frametime * dace_saturation_start && h->dace.t_last_drop > 0)
     {
         printf("DACE saturated\n");
         h->dace.complexity += pow(1 - h->dace.last_encoding_time / h->dace.frametime / dace_saturated,2) * dace_linear_increase;
@@ -3355,12 +3357,38 @@ static int x264_DACE_Cal(x264_t *h){
 }
 static int x264_DACE(x264_t *h){
     x264_DACE_Cal(h);
+#if DACE_TEST
+    if (h->i_frame<DACE_TEST){
+        h->dace.complexities[h->i_frame] = h->dace.complexity;
+    }
+    if (h->i_frame!=0 && h->i_frame < DACE_TEST + 1)
+    {
+        h->dace.duration[h->i_frame-1] = h->dace.last_encoding_time;
+    }
+    if (h->i_frame > DACE_TEST + 1)
+    {
+        FILE* complexity = fopen("complexity.txt", "w");
+        for (int i = 0; i < DACE_TEST; i++)
+        {
+            fprintf(complexity, "%d\n", h->dace.complexities[i]);
+        }
+        fclose(complexity);
+        FILE* duration = fopen("duration.txt", "w");
+        for (int i = 0; i < DACE_TEST; i++)
+        {
+            fprintf(duration, "%d\n", h->dace.duration[i]);
+        }
+        fclose(duration);
+    }
+    
+#endif
     printf("h->dace.complexity = %d\n", h->dace.complexity);
     printf("h->dace.last_encoding_time = %d\n", h->dace.last_encoding_time);
     printf("h->dace.t_last_drop = %d\n", h->dace.t_last_drop - 1);
     printf("h->dace.c_last_drop = %d\n", h->dace.c_last_drop);
     printf("h->dace.frametime = %d\n", h->dace.frametime);
     printf("h->dace.complexity_level = %d\n", h->dace.complexity_level); 
+    
     if (h->dace.complexity_level != (int)(h->dace.complexity /1000))
     {
         h->dace.complexity_level =(int) (h->dace.complexity / 1000);
