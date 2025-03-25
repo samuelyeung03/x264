@@ -1934,6 +1934,10 @@ static int encoder_try_reconfig( x264_t *h, x264_param_t *param, int *rc_reconfi
     *rc_reconfig |= h->param.rc.f_rf_constant_max != param->rc.f_rf_constant_max;
     COPY( rc.f_rf_constant );
     COPY( rc.f_rf_constant_max );
+#if DACE_TEST
+    COPY( dace_fixed_complexity );
+    COPY( dace_complexity_level );
+#endif
 #undef COPY
 
     return validate_parameters( h, 0 );
@@ -3321,6 +3325,13 @@ int x264_encoder_invalidate_reference( x264_t *h, int64_t pts )
 }
 #if DACE_ACTION
 static int x264_DACE_Cal(x264_t *h){
+#if DACE_TEST
+    if (h->param.dace_fixed_complexity)
+    {
+        h->dace.complexity = h->param.dace_complexity_level * 1000;
+        return 5;
+    }
+#endif
     if (h->fenc->b_keyframe)
     {
         h->dace.c_last_drop = h->dace.complexity;
@@ -3389,8 +3400,15 @@ static int x264_DACE(x264_t *h){
     printf("h->dace.t_last_drop = %d\n", h->dace.t_last_drop - 1);
     printf("h->dace.c_last_drop = %d\n", h->dace.c_last_drop);
     printf("h->dace.frametime = %d\n", h->dace.frametime);
-    printf("h->dace.complexity_level = %d\n", h->dace.complexity_level); 
     
+    
+    if (h->dace.complexity_level == h->dace.complexity / 1000)
+    {
+        printf("h->dace.complexity_level = %d\n", h->dace.complexity_level); 
+        return 0;
+    }
+    printf("h->dace.complexity_level = %d\n", h->dace.complexity_level); 
+    h->dace.complexity_level = h->dace.complexity / 1000;
     switch (h->dace.complexity_level)
     {
         case 0:
@@ -3584,12 +3602,6 @@ static int x264_DACE(x264_t *h){
             printf("Invalid complexity level\n");
             break;
     }
-    printf("h->dace.complexity = %d\n", h->dace.complexity);
-    printf("h->dace.last_encoding_time = %d\n", h->dace.last_encoding_time);
-    printf("h->dace.t_last_drop = %d\n", h->dace.t_last_drop);
-    printf("h->dace.c_last_drop = %d\n", h->dace.c_last_drop);
-    printf("h->dace.frametime = %d\n", h->dace.frametime);
-    printf("h->dace.complexity_level = %d\n", h->dace.complexity_level);    
     return 0;
 }
 #endif
