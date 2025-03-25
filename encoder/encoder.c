@@ -3422,7 +3422,7 @@ static int x264_DACE(x264_t *h){
             h->param.analyse.inter = X264_ANALYSE_I4x4 | X264_ANALYSE_I8x8;;
             h->param.analyse.i_me_range = 16;
             //h->param.analyse.i_noise_reduction = 16;
-            h->param.analyse.i_subpel_refine = 0;
+            //h->param.analyse.i_subpel_refine = 0; // Enable will casue error
             h->param.analyse.i_trellis = 0;
             //h->param.analyse.b_dct_decimate = 1;  // Enabled
             //h->param.analyse.b_fast_pskip = 1;   // Enabled
@@ -3441,7 +3441,7 @@ static int x264_DACE(x264_t *h){
             h->param.analyse.inter = X264_ANALYSE_I4x4 | X264_ANALYSE_I8x8;
             h->param.analyse.i_me_range = 24;
             //h->param.analyse.i_noise_reduction = 24;
-            h->param.analyse.i_subpel_refine = 1;
+            //h->param.analyse.i_subpel_refine = 1; // Enable will casue error
             h->param.analyse.i_trellis = 0;
             //h->param.analyse.b_dct_decimate = 0;  // Disabled
             //h->param.analyse.b_fast_pskip = 0;   // Disabled
@@ -3460,7 +3460,7 @@ static int x264_DACE(x264_t *h){
             h->param.analyse.inter = X264_ANALYSE_I4x4 | X264_ANALYSE_I8x8 | X264_ANALYSE_PSUB16x16;
             h->param.analyse.i_me_range = 8;
             //h->param.analyse.i_noise_reduction = 8;
-            h->param.analyse.i_subpel_refine = 2;
+            //h->param.analyse.i_subpel_refine = 2; // Enable will casue error
             h->param.analyse.i_trellis = 0;
             //h->param.i_slice_max_size = 10000;  // Limit slice size
             h->param.analyse.i_me_method = X264_ME_DIA;
@@ -3478,7 +3478,7 @@ static int x264_DACE(x264_t *h){
                                      X264_ANALYSE_PSUB16x16 | X264_ANALYSE_BSUB16x16;
             h->param.analyse.i_me_range = 32;
             //h->param.analyse.i_noise_reduction = 32;
-            h->param.analyse.i_subpel_refine = 3;
+            //h->param.analyse.i_subpel_refine = 3; // Enable will casue error
             h->param.analyse.i_trellis = 1;
             //h->param.i_slice_max_size = 20000;  // Limit slice size
             h->param.analyse.i_me_method = X264_ME_HEX;
@@ -3497,7 +3497,7 @@ static int x264_DACE(x264_t *h){
                                      X264_ANALYSE_PSUB8x8;
             h->param.analyse.i_me_range = 48;
             //h->param.analyse.i_noise_reduction = 48;
-            h->param.analyse.i_subpel_refine = 5;
+            //h->param.analyse.i_subpel_refine = 5; // Enable will casue error
             h->param.analyse.i_trellis = 1;
             //h->param.i_slice_max_size = 30000;
             h->param.analyse.i_me_method = X264_ME_HEX;
@@ -3516,7 +3516,7 @@ static int x264_DACE(x264_t *h){
                                      X264_ANALYSE_PSUB8x8;
             h->param.analyse.i_me_range = 64;
             //h->param.analyse.i_noise_reduction = 64;
-            h->param.analyse.i_subpel_refine = 7;
+            //h->param.analyse.i_subpel_refine = 7; // Enable will casue error
             h->param.analyse.i_trellis = 1;
             //h->param.i_slice_max_size = 40000;
             h->param.analyse.i_me_method = X264_ME_HEX;
@@ -3535,7 +3535,7 @@ static int x264_DACE(x264_t *h){
                                      X264_ANALYSE_PSUB8x8;
             h->param.analyse.i_me_range = 80;
             //h->param.analyse.i_noise_reduction = 80;
-            h->param.analyse.i_subpel_refine = 8;
+            //h->param.analyse.i_subpel_refine = 8; // Enable will casue error
             h->param.analyse.i_trellis = 2;
             //h->param.i_slice_max_size = 50000;
             h->param.analyse.i_me_method = X264_ME_UMH;
@@ -3554,7 +3554,7 @@ static int x264_DACE(x264_t *h){
                                      X264_ANALYSE_PSUB8x8;
             h->param.analyse.i_me_range = 96;
             //h->param.analyse.i_noise_reduction = 96;
-            h->param.analyse.i_subpel_refine = 9;
+            //h->param.analyse.i_subpel_refine = 9; // Enable will casue error
             h->param.analyse.i_trellis = 2;
             //h->param.i_slice_max_size = 75000;
             h->param.analyse.i_me_method = X264_ME_UMH;
@@ -3573,10 +3573,10 @@ static int x264_DACE(x264_t *h){
                                      X264_ANALYSE_PSUB8x8;
             h->param.analyse.i_me_range = 112;
             //h->param.analyse.i_noise_reduction = 112;
-            h->param.analyse.i_subpel_refine = 10;
+            //h->param.analyse.i_subpel_refine = 10; // Enable will casue error
             h->param.analyse.i_trellis = 2;
             //h->param.i_slice_max_size = 100000;
-            h->param.analyse.i_me_method = X264_ME_TESA;
+            h->param.analyse.i_me_method = X264_ME_UMH;
             break;
     
         case 9:
@@ -3592,10 +3592,10 @@ static int x264_DACE(x264_t *h){
                                      X264_ANALYSE_PSUB8x8;
             h->param.analyse.i_me_range = 128;
             //h->param.analyse.i_noise_reduction = 128;
-            h->param.analyse.i_subpel_refine = 11;
+            //h->param.analyse.i_subpel_refine = 11; // Enable will casue error
             h->param.analyse.i_trellis = 2;
             //h->param.i_slice_max_size = 150000;
-            h->param.analyse.i_me_method =  X264_ME_TESA;
+            h->param.analyse.i_me_method = X264_ME_UMH;
             break;
     
         default:
