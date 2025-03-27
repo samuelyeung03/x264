@@ -37,7 +37,7 @@
 #endif
 #define ACE_ACTION 0
 #define DACE_ACTION 1
-#define DACE_TEST 0
+#define DACE_TEST 1
 //#define DEBUG_MB_TYPE
 
 #define bs_write_ue bs_write_ue_big
@@ -1935,7 +1935,6 @@ static int encoder_try_reconfig( x264_t *h, x264_param_t *param, int *rc_reconfi
     COPY( rc.f_rf_constant );
     COPY( rc.f_rf_constant_max );
 #if DACE_TEST
-    COPY( dace_fixed_complexity );
     COPY( dace_complexity_level );
 #endif
 #undef COPY
@@ -3325,13 +3324,13 @@ int x264_encoder_invalidate_reference( x264_t *h, int64_t pts )
 }
 #if DACE_ACTION
 static int x264_DACE_Cal(x264_t *h){
-#if DACE_TEST
-    if (h->param.dace_fixed_complexity)
+    #if DACE_TEST
+    if (h->param.dace_complexity_level + 1)
     {
-        h->dace.complexity = h->param.dace_complexity_level * 1000;
+        h->dace.complexity = 1000*h->param.dace_complexity_level;
         return 5;
     }
-#endif
+    #endif
     if (h->fenc->b_keyframe)
     {
         h->dace.c_last_drop = h->dace.complexity;
@@ -3370,38 +3369,11 @@ static int x264_DACE_Cal(x264_t *h){
 }
 static int x264_DACE(x264_t *h){
     x264_DACE_Cal(h);
-#if DACE_TEST
-    if (h->i_frame<DACE_TEST){
-        h->dace.complexities[h->i_frame] = h->dace.complexity;
-    }
-    if (h->i_frame!=0 && h->i_frame < DACE_TEST + 1)
-    {
-        h->dace.duration[h->i_frame-1] = h->dace.last_encoding_time;
-    }
-    if (h->i_frame > DACE_TEST + 1)
-    {
-        FILE* complexity = fopen("complexity.txt", "w");
-        for (int i = 0; i < DACE_TEST; i++)
-        {
-            fprintf(complexity, "%d\n", h->dace.complexities[i]);
-        }
-        fclose(complexity);
-        FILE* duration = fopen("duration.txt", "w");
-        for (int i = 0; i < DACE_TEST; i++)
-        {
-            fprintf(duration, "%d\n", h->dace.duration[i]);
-        }
-        fclose(duration);
-    }
-    
-#endif
     printf("h->dace.complexity = %d\n", h->dace.complexity);
     printf("h->dace.last_encoding_time = %d\n", h->dace.last_encoding_time);
     printf("h->dace.t_last_drop = %d\n", h->dace.t_last_drop - 1);
     printf("h->dace.c_last_drop = %d\n", h->dace.c_last_drop);
     printf("h->dace.frametime = %d\n", h->dace.frametime);
-    
-    
     if (h->dace.complexity_level != (int)(h->dace.complexity /1000))
     {
         h->dace.complexity_level =(int) (h->dace.complexity / 1000);
@@ -4195,8 +4167,10 @@ int     x264_encoder_encode( x264_t *h,
     }
 
 #if DACE_ACTION
-
-    x264_DACE(h);
+    if (h->param.dace)
+    {
+        x264_DACE(h);
+    }
 #endif
 
     /* Init the rate control */
@@ -4522,6 +4496,11 @@ static int encoder_frame_end( x264_t *h, x264_t *thread_current,
         snprintf( psz_message + msg_len, 80 - msg_len, " SSIM Y:%.5f", pic_out->prop.f_ssim );
     }
     psz_message[79] = '\0';
+
+#if DACE_TEST
+    pic_out->prop.DACE_complexity = h->dace.complexity;
+    pic_out->prop.DACE_encoding_time = h->dace.last_encoding_time;
+#endif
 
     x264_log( h, X264_LOG_DEBUG,
               "frame=%4d QP=%.2f NAL=%d Slice:%c Poc:%-3d I:%-4d P:%-4d SKIP:%-4d size=%d bytes%s\n",

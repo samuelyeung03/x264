@@ -113,7 +113,7 @@
 #define CPPIXEL_X4(dst,src) MPIXEL_X4(dst) = MPIXEL_X4(src)
 
 #define DACE_ACTION 1
-#define DACE_TEST 0
+#define DACE_TEST 1
 
 /****************************************************************************
  * Includes
@@ -321,12 +321,8 @@ struct x264_t
         #define dace_sacle_constant 0.4 // scaling constant
         #define dace_saturation_start 0.7 // offset of frametime to prevent over shooting
         #define dace_saturated 0.8 // offset of frametime to prevent over shooting
-        #define dace_max_complexity 10500
+        #define dace_max_complexity 9999
         #define dace_saturation_factor 0.005
-    #if DACE_TEST
-        int complexities[DACE_TEST]; // store the complexity levels
-        int duration[DACE_TEST]; // store the duration of each frame
-    #endif
     } dace;
 #endif
     

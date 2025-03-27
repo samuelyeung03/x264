@@ -46,7 +46,7 @@ extern "C" {
 #include "x264_config.h"
 
 #define X264_BUILD 164
-#define DACE_TEST 0
+#define DACE_TEST 1
 
 #ifdef _WIN32
 #   define X264_DLL_IMPORT __declspec(dllimport)
@@ -618,10 +618,10 @@ typedef struct x264_param_t
 
     /* For internal use only */
     void *opaque;
-#if DACE_TEST
-    int dace_fixed_complexity;
+
+    int dace;
     int dace_complexity_level;
-#endif
+
 } x264_param_t;
 
 X264_API void x264_nal_encode( x264_t *h, uint8_t *dst, x264_nal_t *nal );
@@ -859,6 +859,11 @@ typedef struct x264_image_properties_t
     double f_psnr_avg;
     /* Out: PSNR of Y, U, and V (if x264_param_t.b_psnr is set) */
     double f_psnr[3];
+
+#if DACE_TEST
+    int DACE_complexity;
+    int DACE_encoding_time;
+#endif
 
     /* Out: Average effective CRF of the encoded frame */
     double f_crf_avg;

@@ -484,6 +484,9 @@ REALIGN_STACK void x264_param_default( x264_param_t *param )
     param->psz_clbin_file = NULL;
     param->i_avcintra_class = 0;
     param->i_avcintra_flavor = X264_AVCINTRA_FLAVOR_PANASONIC;
+
+    param->dace = 1;
+    param->dace_complexity_level = -1;
 }
 
 static int param_apply_preset( x264_param_t *param, const char *preset )
