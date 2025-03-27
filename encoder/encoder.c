@@ -3368,6 +3368,11 @@ static int x264_DACE_Cal(x264_t *h){
     return 1;
 }
 static int x264_DACE(x264_t *h){
+    if (!h->param.dace)
+    {
+        return 0;
+    }
+    
     x264_DACE_Cal(h);
     printf("h->dace.complexity = %d\n", h->dace.complexity);
     printf("h->dace.last_encoding_time = %d\n", h->dace.last_encoding_time);
@@ -3504,7 +3509,7 @@ static int x264_DACE(x264_t *h){
                 printf("Complexity level 6\n");
                 h->param.analyse.i_trellis = 2;
                 h->param.analyse.inter = X264_ANALYSE_I4x4 | X264_ANALYSE_I8x8 | X264_ANALYSE_PSUB16x16 | X264_ANALYSE_BSUB16x16;
-                h->param.analyse.i_me_method = X264_ME_TESA; 
+                h->param.analyse.i_me_method = X264_ME_UMH; 
                 h->param.analyse.i_subpel_refine = 8;
                 // h->param.i_frame_reference = 2;
                 h->param.analyse.b_mixed_references = 1;
@@ -3524,7 +3529,7 @@ static int x264_DACE(x264_t *h){
                 printf("Complexity level 7\n");
                 h->param.analyse.i_trellis = 2;
                 h->param.analyse.inter = X264_ANALYSE_I4x4 | X264_ANALYSE_I8x8 | X264_ANALYSE_PSUB16x16 | X264_ANALYSE_BSUB16x16;
-                h->param.analyse.i_me_method = X264_ME_TESA;
+                h->param.analyse.i_me_method = X264_ME_UMH;
                 h->param.analyse.i_subpel_refine = 9;
                 // h->param.i_frame_reference = 2;
                 h->param.analyse.b_mixed_references = 1;
@@ -3544,7 +3549,7 @@ static int x264_DACE(x264_t *h){
                 printf("Complexity level 8\n");
                 h->param.analyse.i_trellis = 2;
                 h->param.analyse.inter = X264_ANALYSE_I4x4 | X264_ANALYSE_I8x8 | X264_ANALYSE_PSUB16x16 | X264_ANALYSE_BSUB16x16;
-                h->param.analyse.i_me_method = X264_ME_TESA;
+                h->param.analyse.i_me_method = X264_ME_UMH;
                 h->param.analyse.i_subpel_refine = 10;
                 // h->param.i_frame_reference = 2;
                 h->param.analyse.b_mixed_references = 1;
@@ -3564,7 +3569,7 @@ static int x264_DACE(x264_t *h){
                 printf("Complexity level 9\n");
                 h->param.analyse.i_trellis = 2;
                 h->param.analyse.inter = X264_ANALYSE_I4x4 | X264_ANALYSE_I8x8 | X264_ANALYSE_PSUB16x16 | X264_ANALYSE_BSUB16x16 | X264_ANALYSE_PSUB8x8 | X264_ANALYSE_PSUB8x8;
-                h->param.analyse.i_me_method = X264_ME_TESA;
+                h->param.analyse.i_me_method = X264_ME_UMH;
                 h->param.analyse.i_subpel_refine = 11;
                 // h->param.i_frame_reference = 4;
                 h->param.analyse.b_mixed_references = 1;
@@ -3578,8 +3583,6 @@ static int x264_DACE(x264_t *h){
                 h->param.analyse.b_fast_pskip = 0;
                 // h->param.analyse.b_dct_decimate = 0;
                 h->param.b_deblocking_filter = 1;
-                h->param.i_deblocking_filter_alphac0 = 0;
-                h->param.i_deblocking_filter_beta = 0;
                 validate_parameters(h, 1);
                 break;
     
