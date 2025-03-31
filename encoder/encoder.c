@@ -1979,6 +1979,7 @@ int x264_encoder_reconfig( x264_t *h, x264_param_t *param )
         h->reconfig_h->param = param_save;
 #if DACE_ACTION
         h->dace.frametime = 1000000 / h->param.i_fps_num;
+        h->dace.complexity_level = -1;
 #endif
 
     return ret;
