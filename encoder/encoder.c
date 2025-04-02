@@ -3346,8 +3346,9 @@ static int x264_DACE_Cal(x264_t *h){
     }
     else if (h->dace.last_encoding_time > h->dace.frametime)
     {
-        h->dace.t_last_drop = 0;
+        h->dace.complexity = h->dace.complexity * dace_drop_factor;
         h->dace.c_last_drop = h->dace.complexity;
+        return 4;
     }
     else if (h->dace.complexity > dace_max_complexity)
     {
@@ -3362,7 +3363,7 @@ static int x264_DACE_Cal(x264_t *h){
     }
     else
     {
-        h->dace.complexity = dace_sacle_constant*pow(h->dace.t_last_drop - pow(h->dace.c_last_drop*dace_drop_factor/dace_sacle_constant ,1.0/3),3) + h->dace.c_last_drop;
+        h->dace.complexity += 500;
         h->dace.t_last_drop ++;
     }    
     h->dace.complexity = fmin(h->dace.complexity , dace_max_complexity);
