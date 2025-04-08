@@ -38,6 +38,7 @@
 #define ACE_ACTION 0
 #define DACE_ACTION 1
 #define DACE_TEST 1
+#define DACE_SAT 1
 //#define DEBUG_MB_TYPE
 
 #define bs_write_ue bs_write_ue_big
@@ -3350,6 +3351,13 @@ static int x264_DACE_CUBIC(x264_t *h){
         h->dace.t_last_drop ++;
         return 3;
     }
+    #if DACE_SAT
+    if (h->dace.last_encoding_time > h->dace.frametime * dace_saturation_start )
+    {
+        h->dace.complexity += (1 - h->dace.last_encoding_time/(h->dace.frametime*dace_saturated))*100;
+        return 4;
+    }
+    #endif
     h->dace.complexity = dace_sacle_constant*pow(h->dace.t_last_drop - pow(h->dace.c_last_drop*dace_drop_factor/dace_sacle_constant ,1.0/3),3) + h->dace.c_last_drop;
     h->dace.t_last_drop ++;
     h->dace.complexity = fmin(h->dace.complexity , dace_max_complexity);
@@ -3384,6 +3392,13 @@ static int x264_DACE_RENO(x264_t *h){
         h->dace.ssthresh = h->dace.complexity;
         return 3;
     }
+    #if DACE_SAT
+    if (h->dace.last_encoding_time > h->dace.frametime * dace_saturation_start )
+    {
+        h->dace.complexity += (1 - h->dace.last_encoding_time/(h->dace.frametime*dace_saturated))*100;
+        return 4;
+    }
+    #endif
     if (h->dace.complexity < h->dace.ssthresh)
     {
         h->dace.complexity += 100 * h->dace.t_last_drop;

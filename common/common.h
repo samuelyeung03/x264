@@ -321,7 +321,7 @@ struct x264_t
         #define dace_drop_factor 0.7 // multiplicative decrease factor
         #define dace_sacle_constant 0.4 // scaling constant
         #define dace_saturation_start 0.7 // offset of frametime to prevent over shooting
-        #define dace_saturated 0.8 // offset of frametime to prevent over shooting
+        #define dace_saturated 0.85 // offset of frametime to prevent over shooting
         #define dace_max_complexity 7999
         #define dace_saturation_factor 0.005
     } dace;
