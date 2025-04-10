@@ -315,15 +315,13 @@ struct x264_t
         int c_last_drop; // complexity at last drop
         int complexity; // encoding complexity
         int frametime; // 1/fps
-        int ace_action; 
-        int ssthresh; // threshold for ssthresh
+        int ssthresh; // threshold for ssthresh for reno
         int complexity_level; //encoding complexity presets
         #define dace_drop_factor 0.7 // multiplicative decrease factor
-        #define dace_sacle_constant 0.4 // scaling constant
-        #define dace_saturation_start 0.7 // offset of frametime to prevent over shooting
-        #define dace_saturated 0.85 // offset of frametime to prevent over shooting
+        #define dace_sacle_constant 0.4 // scaling constant for cubic
+        #define dace_saturation_start 0.7 // start of saturation
+        #define dace_saturated 0.85 // target frametime to prevent over shooting
         #define dace_max_complexity 7999
-        #define dace_saturation_factor 0.005
     } dace;
 #endif
     

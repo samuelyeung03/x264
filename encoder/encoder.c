@@ -3326,303 +3326,169 @@ int x264_encoder_invalidate_reference( x264_t *h, int64_t pts )
 }
 #if DACE_ACTION
 static int x264_DACE_CUBIC(x264_t *h){
-    #if DACE_TEST
+    // If the complexity level is set to constant value, set the complexity to the level
     if (h->param.dace_complexity_level + 1)
     {
         h->dace.complexity = 1000*h->param.dace_complexity_level;
-        return 5;
+        return 4;
     }
-    #endif
-    if (h->fenc->b_keyframe)
-    {
-        h->dace.complexity = 0;
-        printf("DACE keyframe detected\n");
-        return 2;
-    }
-    if (h->dace.t_last_drop == -1)  
-    {
-        h->dace.t_last_drop = 1;
-    }
+    // If last frame overshoot the frame time, reduce the complexity
     if (h->dace.last_encoding_time > h->dace.frametime)
     {
         h->dace.t_last_drop = 0;
         h->dace.c_last_drop = h->dace.complexity;
         h->dace.complexity = dace_sacle_constant*pow(h->dace.t_last_drop - pow(h->dace.c_last_drop*dace_drop_factor/dace_sacle_constant ,1.0/3),3) + h->dace.c_last_drop;
         h->dace.t_last_drop ++;
-        return 3;
+        return 2;
     }
-    #if DACE_SAT
+    // If encoding time reaches the saturation point, change the complexity gradually
     if (h->dace.last_encoding_time > h->dace.frametime * dace_saturation_start )
     {
         h->dace.complexity += (1 - h->dace.last_encoding_time/(h->dace.frametime*dace_saturated))*100;
-        return 4;
+        return 3;
     }
-    #endif
+    // Cubic
     h->dace.complexity = dace_sacle_constant*pow(h->dace.t_last_drop - pow(h->dace.c_last_drop*dace_drop_factor/dace_sacle_constant ,1.0/3),3) + h->dace.c_last_drop;
     h->dace.t_last_drop ++;
     h->dace.complexity = fmin(h->dace.complexity , dace_max_complexity);
     return 1;
 }
 static int x264_DACE_RENO(x264_t *h){
-    #if DACE_TEST
+    // If the complexity level is set to constant value, set the complexity to the level
     if (h->param.dace_complexity_level + 1)
     {
         h->dace.complexity = 1000*h->param.dace_complexity_level;
-        return 5;
+        return 4;
     }
-    #endif
-    if (h->fenc->b_keyframe)
-    {
-        h->dace.c_last_drop = h->dace.complexity;
-        h->dace.complexity = 0;
-        h->dace.t_last_drop = -1;
-        printf("DACE keyframe detected\n");
-        return 2;
-    }
-    if (h->dace.t_last_drop == -1)  
-    {
-        h->dace.complexity = h->dace.c_last_drop;
-        h->dace.t_last_drop = 1;
-    }
+    // If last frame overshoot the frame time, reduce the complexity
     if (h->dace.last_encoding_time > h->dace.frametime)
     {
         h->dace.t_last_drop = 0;
         h->dace.c_last_drop = h->dace.complexity;
         h->dace.complexity = dace_drop_factor * h->dace.complexity;
         h->dace.ssthresh = h->dace.complexity;
-        return 3;
+        return 2;
     }
-    #if DACE_SAT
+    // If encoding time reaches the saturation point, change the complexity gradually
     if (h->dace.last_encoding_time > h->dace.frametime * dace_saturation_start )
     {
-        h->dace.complexity += (1 - h->dace.last_encoding_time/(h->dace.frametime*dace_saturated))*100;
-        return 4;
+        h->dace.complexity += (1 - h->dace.last_encoding_time/(h->dace.frametime*dace_saturated))*200;
+        return 3;
     }
-    #endif
+    // Slow start
     if (h->dace.complexity < h->dace.ssthresh)
     {
         h->dace.complexity += 100 * h->dace.t_last_drop;
-    }    
+    }
+    // Linear increase    
     h->dace.complexity += 100;
     h->dace.t_last_drop ++;
     h->dace.complexity = fmin(h->dace.complexity , dace_max_complexity);
     return 1;
 }
+// set the complexity level
 static int x264_DACE(x264_t *h){
-    printf("h->dace.complexity = %d\n", h->dace.complexity);
-    printf("h->dace.last_encoding_time = %d\n", h->dace.last_encoding_time);
-    printf("h->dace.t_last_drop = %d\n", h->dace.t_last_drop - 1);
-    printf("h->dace.c_last_drop = %d\n", h->dace.c_last_drop);
-    printf("h->dace.frametime = %d\n", h->dace.frametime);
     if (h->dace.complexity_level != (int)(h->dace.complexity /1000))
     {
+        //get the complexity level
         h->dace.complexity_level =(int) (h->dace.complexity / 1000);
-        printf("Complexity level changed to %d\n", h->dace.complexity_level);
         switch (h->dace.complexity_level)
         {
             case 0:
-                printf("Complexity level 0\n");
                 h->param.analyse.i_trellis = 0;
                 h->param.analyse.inter = X264_ANALYSE_I4x4 | X264_ANALYSE_I8x8;
                 h->param.analyse.i_me_method = X264_ME_DIA;
                 h->param.analyse.i_subpel_refine = 1;
-                // h->param.i_frame_reference = 1;
                 h->param.analyse.b_mixed_references = 0;
                 h->param.analyse.b_chroma_me = 0;
-                // h->param.analyse.i_direct_mv_pred = X264_DIRECT_PRED_NONE;
                 h->param.analyse.i_me_range = 16;
-                // h->param.analyse.i_luma_deadzone[0] = 21;
-                // h->param.analyse.i_luma_deadzone[1] = 11;
-                //h->param.analyse.i_noise_reduction = 0;
                 h->param.analyse.b_weighted_bipred = X264_WEIGHTP_SIMPLE;
                 h->param.analyse.b_fast_pskip = 1;
-                // h->param.analyse.b_dct_decimate = 1;
                 h->param.b_deblocking_filter = 0;
-                validate_parameters(h, 1);
                 break;
             case 1:
-                printf("Complexity level 1\n");
                 h->param.analyse.i_trellis = 1;
                 h->param.analyse.inter = X264_ANALYSE_I4x4 | X264_ANALYSE_I8x8 | X264_ANALYSE_PSUB16x16;
                 h->param.analyse.i_me_method = X264_ME_HEX;
                 h->param.analyse.i_subpel_refine = 2;
-                // h->param.i_frame_reference = 1;
                 h->param.analyse.b_mixed_references = 0;
                 h->param.analyse.b_chroma_me = 0;
-                // h->param.analyse.i_direct_mv_pred = X264_DIRECT_PRED_NONE;
                 h->param.analyse.i_me_range = 16;
-                // h->param.analyse.i_luma_deadzone[0] = 21;
-                // h->param.analyse.i_luma_deadzone[1] = 11;
-                //h->param.analyse.i_noise_reduction = 0;
                 h->param.analyse.b_weighted_bipred = X264_WEIGHTP_SIMPLE;
                 h->param.analyse.b_fast_pskip = 1;
-                // h->param.analyse.b_dct_decimate = 1;
                 h->param.b_deblocking_filter = 0;
-                validate_parameters(h, 1);
                 break;
             case 2:
-                printf("Complexity level 2\n");
                 h->param.analyse.i_trellis = 1;
                 h->param.analyse.inter = X264_ANALYSE_I4x4 | X264_ANALYSE_I8x8 | X264_ANALYSE_PSUB16x16 | X264_ANALYSE_BSUB16x16;
                 h->param.analyse.i_me_method = X264_ME_HEX;
                 h->param.analyse.i_subpel_refine = 6;
-                // h->param.i_frame_reference = 2;
                 h->param.analyse.b_mixed_references = 1;
                 h->param.analyse.b_chroma_me = 1;
-                // h->param.analyse.i_direct_mv_pred = X264_DIRECT_PRED_NONE;
                 h->param.analyse.i_me_range = 24;
-                // h->param.analyse.i_luma_deadzone[0] = 21;
-                // h->param.analyse.i_luma_deadzone[1] = 11;
-                //h->param.analyse.i_noise_reduction = 0;
                 h->param.analyse.b_weighted_bipred = X264_WEIGHTP_SIMPLE;
                 h->param.analyse.b_fast_pskip = 1;
-                // h->param.analyse.b_dct_decimate = 1;
                 h->param.b_deblocking_filter = 0;
-                validate_parameters(h, 1);
                 break;
             case 3:
-                printf("Complexity level 3\n");
                 h->param.analyse.i_trellis = 1;
                 h->param.analyse.inter = X264_ANALYSE_I4x4 | X264_ANALYSE_I8x8 | X264_ANALYSE_PSUB16x16 | X264_ANALYSE_BSUB16x16;
                 h->param.analyse.i_me_method = X264_ME_UMH;
                 h->param.analyse.i_subpel_refine = 6;
-                // h->param.i_frame_reference = 2;
                 h->param.analyse.b_mixed_references = 1;
-                h->param.analyse.b_chroma_me = 1;
-                // h->param.analyse.i_direct_mv_pred = X264_DIRECT_PRED_SPATIAL;
                 h->param.analyse.i_me_range = 24;
-                // h->param.analyse.i_luma_deadzone[0] = 21;
-                // h->param.analyse.i_luma_deadzone[1] = 11;
-                //h->param.analyse.i_noise_reduction = 0;
                 h->param.analyse.b_weighted_bipred = X264_WEIGHTP_SIMPLE;
                 h->param.analyse.b_fast_pskip = 1;
-                // h->param.analyse.b_dct_decimate = 1;
                 h->param.b_deblocking_filter = 1;
-                validate_parameters(h, 1);
                 break;
             case 4:
-                printf("Complexity level 4\n");
                 h->param.analyse.i_trellis = 2;
                 h->param.analyse.inter = X264_ANALYSE_I4x4 | X264_ANALYSE_I8x8 | X264_ANALYSE_PSUB16x16 | X264_ANALYSE_BSUB16x16;
                 h->param.analyse.i_me_method = X264_ME_UMH;
                 h->param.analyse.i_subpel_refine = 7;
-                // h->param.i_frame_reference = 2;
                 h->param.analyse.b_mixed_references = 1;
                 h->param.analyse.b_chroma_me = 1;
-                // h->param.analyse.i_direct_mv_pred = X264_DIRECT_PRED_SPATIAL;
                 h->param.analyse.i_me_range = 32;
-                // h->param.analyse.i_luma_deadzone[0] = 21;
-                // h->param.analyse.i_luma_deadzone[1] = 11;
-                //h->param.analyse.i_noise_reduction = 100;
                 h->param.analyse.b_weighted_bipred = X264_WEIGHTP_SIMPLE;
                 h->param.analyse.b_fast_pskip = 1;
-                // h->param.analyse.b_dct_decimate = 1;
                 h->param.b_deblocking_filter = 1;
-                validate_parameters(h, 1);
                 break;
             case 5:
-                printf("Complexity level 5\n");
                 h->param.analyse.i_trellis = 2;
                 h->param.analyse.inter = X264_ANALYSE_I4x4 | X264_ANALYSE_I8x8 | X264_ANALYSE_PSUB16x16 | X264_ANALYSE_BSUB16x16;
                 h->param.analyse.i_me_method = X264_ME_UMH;
                 h->param.analyse.i_subpel_refine = 8;
-                // h->param.i_frame_reference = 2;
                 h->param.analyse.b_mixed_references = 1;
                 h->param.analyse.b_chroma_me = 1;
-                // h->param.analyse.i_direct_mv_pred = X264_DIRECT_PRED_SPATIAL;
                 h->param.analyse.i_me_range = 32;
-                // h->param.analyse.i_luma_deadzone[0] = 21;
-                // h->param.analyse.i_luma_deadzone[1] = 11;
-                //h->param.analyse.i_noise_reduction = 100;
                 h->param.analyse.b_weighted_bipred = X264_WEIGHTP_SMART;
                 h->param.analyse.b_fast_pskip = 1;
-                // h->param.analyse.b_dct_decimate = 1;
                 h->param.b_deblocking_filter = 1;
-                validate_parameters(h, 1);
                 break;
             case 6:
-                printf("Complexity level 6\n");
                 h->param.analyse.i_trellis = 2;
                 h->param.analyse.inter = X264_ANALYSE_I4x4 | X264_ANALYSE_I8x8 | X264_ANALYSE_PSUB16x16 | X264_ANALYSE_BSUB16x16;
                 h->param.analyse.i_me_method = X264_ME_UMH; 
                 h->param.analyse.i_subpel_refine = 10;
-                // h->param.i_frame_reference = 2;
                 h->param.analyse.b_mixed_references = 1;
                 h->param.analyse.b_chroma_me = 1;
-                // h->param.analyse.i_direct_mv_pred = X264_DIRECT_PRED_SPATIAL;
                 h->param.analyse.i_me_range = 32;
-                // h->param.analyse.i_luma_deadzone[0] = 21;
-                // h->param.analyse.i_luma_deadzone[1] = 11;
-                //h->param.analyse.i_noise_reduction = 100;
                 h->param.analyse.b_weighted_bipred = X264_WEIGHTP_SMART;
                 h->param.analyse.b_fast_pskip = 1;
-                // h->param.analyse.b_dct_decimate = 0;
                 h->param.b_deblocking_filter = 1;
-                validate_parameters(h, 1);
                 break;
             case 7:
-                printf("Complexity level 7\n");
                 h->param.analyse.i_trellis = 2;
                 h->param.analyse.inter = X264_ANALYSE_I4x4 | X264_ANALYSE_I8x8 | X264_ANALYSE_PSUB16x16 | X264_ANALYSE_BSUB16x16;
                 h->param.analyse.i_me_method = X264_ME_UMH;
                 h->param.analyse.i_subpel_refine = 12;
-                // h->param.i_frame_reference = 2;
                 h->param.analyse.b_mixed_references = 1;
                 h->param.analyse.b_chroma_me = 1;
-                // h->param.analyse.i_direct_mv_pred = X264_DIRECT_PRED_SPATIAL;
                 h->param.analyse.i_me_range = 32;
-                // h->param.analyse.i_luma_deadzone[0] = 21;
-                // h->param.analyse.i_luma_deadzone[1] = 11;
-                //h->param.analyse.i_noise_reduction = 100;
                 h->param.analyse.b_weighted_bipred = X264_WEIGHTP_SMART;
                 h->param.analyse.b_fast_pskip = 1;
-                // h->param.analyse.b_dct_decimate = 0;
-                h->param.b_deblocking_filter = 1;
-                validate_parameters(h, 1);
                 break;
-            // case 8:
-            //     printf("Complexity level 8\n");
-            //     h->param.analyse.i_trellis = 2;
-            //     h->param.analyse.inter = X264_ANALYSE_I4x4 | X264_ANALYSE_I8x8 | X264_ANALYSE_PSUB16x16 | X264_ANALYSE_BSUB16x16;
-            //     h->param.analyse.i_me_method = X264_ME_UMH;
-            //     h->param.analyse.i_subpel_refine = 12;
-            //     // h->param.i_frame_reference = 2;
-            //     h->param.analyse.b_mixed_references = 1;
-            //     h->param.analyse.b_chroma_me = 1;
-            //     // h->param.analyse.i_direct_mv_pred = X264_DIRECT_PRED_SPATIAL;
-            //     h->param.analyse.i_me_range = 32;
-            //     // h->param.analyse.i_luma_deadzone[0] = 21;
-            //     // h->param.analyse.i_luma_deadzone[1] = 11;
-            //     //h->param.analyse.i_noise_reduction = 100;
-            //     h->param.analyse.b_weighted_bipred = X264_WEIGHTP_SMART;
-            //     h->param.analyse.b_fast_pskip = 1;
-            //     // h->param.analyse.b_dct_decimate = 0;
-            //     h->param.b_deblocking_filter = 1;
-            //     validate_parameters(h, 1);
-            //     break;
-            // case 9:
-            //     printf("Complexity level 9\n");
-            //     h->param.analyse.i_trellis = 2;
-            //     h->param.analyse.inter = X264_ANALYSE_I4x4 | X264_ANALYSE_I8x8 | X264_ANALYSE_PSUB16x16 | X264_ANALYSE_BSUB16x16 | X264_ANALYSE_PSUB8x8;
-            //     h->param.analyse.i_me_method = X264_ME_UMH;
-            //     h->param.analyse.i_subpel_refine = 11;
-            //     // h->param.i_frame_reference = 4;
-            //     h->param.analyse.b_mixed_references = 1;
-            //     h->param.analyse.b_chroma_me = 1;
-            //     // h->param.analyse.i_direct_mv_pred = X264_DIRECT_PRED_AUTO;
-            //     h->param.analyse.i_me_range = 32;
-            //     // h->param.analyse.i_luma_deadzone[0] = 6;
-            //     // h->param.analyse.i_luma_deadzone[1] = 6;
-            //     //h->param.analyse.i_noise_reduction = 1000;
-            //     h->param.analyse.b_weighted_bipred = X264_WEIGHTP_SMART;
-            //     h->param.analyse.b_fast_pskip = 1;
-            //     // h->param.analyse.b_dct_decimate = 0;
-            //     h->param.b_deblocking_filter = 1;
-            //     validate_parameters(h, 1);
-            //     break;
-    
         default:
-            printf("Invalid complexity level\n");
              break;
         }
     }
