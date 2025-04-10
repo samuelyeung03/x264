@@ -3492,7 +3492,8 @@ static int x264_DACE(x264_t *h){
              break;
         }
     }
-    return 0;
+    validate_parameters(h, 1);
+    return 1;
 }
 #endif
 /****************************************************************************
@@ -4090,41 +4091,6 @@ int     x264_encoder_encode( x264_t *h,
     /* FIXME: Include slice header bit cost. */
     x264_ratecontrol_start( h, h->fenc->i_qpplus1, overhead*8 );
 
-    // print h->ece.action
-    // printf("h->ace.action = %d\n", h->ace.action);
-#if ACE_ACTION 
-    // TODO change complexity
-    #if DACE_ACTION
-    h->dace.ace_action = h->ace_action;
-    #else
-    if (h->ace.action == 1) // ACTION START
-    {
-            // printf("Changing High complexity\n");
-            h->param.analyse.i_trellis = 2;
-            h->param.analyse.inter = X264_ANALYSE_I4x4 | X264_ANALYSE_I8x8
-                        | X264_ANALYSE_PSUB16x16 | X264_ANALYSE_BSUB16x16;
-            h->param.analyse.i_me_method = X264_ME_HEX;    
-            h->param.analyse.i_subpel_refine = 4;            
-            h->param.i_frame_reference = 2;   
-            validate_parameters(h,1);
-            h->ace.action = 2; 
-
-            // h->param.analyse.i_subpel_refine = 4;           
-            // h->param.analyse.i_me_method = X264_ME_HEX;  
-            // h->param.i_frame_reference = 2;
-    }
-    else if (h->ace.action == 2) { // ACTION STOP
-            // printf("Changing Low complexity\n");
-            h->param.analyse.inter = X264_ANALYSE_I4x4 | X264_ANALYSE_I8x8;
-            h->param.analyse.i_trellis = 0;
-            h->param.analyse.i_me_method = X264_ME_DIA;    
-            h->param.analyse.i_subpel_refine = 1;   
-            h->param.i_frame_reference = 1;   
-            validate_parameters(h,1);
-            h->ace.action = 0;
-    }
-    #endif
-#endif
 
     i_global_qp = x264_ratecontrol_qp( h );
     // printf("i_global_qp = %d\n", i_global_qp);
