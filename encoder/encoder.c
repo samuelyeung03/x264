@@ -3332,6 +3332,12 @@ static int x264_DACE_CUBIC(x264_t *h){
         h->dace.complexity = 1000*h->param.dace_complexity_level;
         return 4;
     }
+    // If Keyframe is detected, set the complexity to 0
+    if (h->fenc->b_keyframe)
+    {
+        h->dace.complexity = 0;
+        return 2;
+    }
     // If last frame overshoot the frame time, reduce the complexity
     if (h->dace.last_encoding_time > h->dace.frametime)
     {
@@ -3359,6 +3365,12 @@ static int x264_DACE_RENO(x264_t *h){
     {
         h->dace.complexity = 1000*h->param.dace_complexity_level;
         return 4;
+    }
+    // If Keyframe is detected, set the complexity to 0
+    if (h->fenc->b_keyframe)
+    {
+        h->dace.complexity = 0;
+        return 2;
     }
     // If last frame overshoot the frame time, reduce the complexity
     if (h->dace.last_encoding_time > h->dace.frametime)
